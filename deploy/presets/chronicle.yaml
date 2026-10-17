@@ -1,0 +1,45 @@
+# Chronicle egress preset: layers Token Factory + Tavily onto an existing
+# NemoClaw sandbox without touching its other grants. Use this for dev:
+#
+#   nemoclaw <sandbox> policy add --from-file deploy/presets/chronicle.yaml --dry-run
+#   nemoclaw <sandbox> policy add --from-file deploy/presets/chronicle.yaml --yes
+#
+# For the demo/benchmark lockdown (only these hosts, nothing else) use
+# deploy/openshell-policy.yaml instead. Keep the two files' endpoints in sync;
+# tests/deploy/test_policy.py checks it.
+
+preset:
+  name: chronicle
+  description: "Chronicle: Nebius Token Factory and Tavily only"
+
+network_policies:
+  chronicle_token_factory:
+    name: chronicle_token_factory
+    endpoints:
+      - host: api.tokenfactory.nebius.com
+        port: 443
+        protocol: rest
+        enforcement: enforce
+        rules:
+          - allow: { method: POST, path: "/v1/chat/completions" }
+          - allow: { method: POST, path: "/v1/embeddings" }
+          - allow: { method: GET, path: "/v1/models" }
+    binaries:
+      - { path: /usr/local/bin/hermes }
+      - { path: /usr/bin/python3* }
+      - { path: /opt/hermes/.venv/bin/python }
+
+  chronicle_tavily:
+    name: chronicle_tavily
+    endpoints:
+      - host: api.tavily.com
+        port: 443
+        protocol: rest
+        enforcement: enforce
+        rules:
+          - allow: { method: POST, path: "/search" }
+          - allow: { method: POST, path: "/extract" }
+    binaries:
+      - { path: /usr/local/bin/hermes }
+      - { path: /usr/bin/python3* }
+      - { path: /opt/hermes/.venv/bin/python }

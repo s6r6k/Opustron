@@ -11,3 +11,8 @@ node_modules/
 ui/dist/
 data/*/
 !data/README.md
+!data/demo/
+!data/demo/**
+.tmp/
+.cache/
+.coverage

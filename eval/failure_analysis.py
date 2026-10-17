@@ -1,1 +1,1 @@
-"""Evaluation failure analysis helpers."""
+"""Analyze benchmark verdicts only after the held-out evaluation is complete."""

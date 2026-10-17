@@ -1,5 +1,4 @@
-"""Abstention policy."""
+from .models import Evidence
 
-
-def should_abstain(memories: list, *, minimum: int = 1) -> bool:
-    return len(memories) < minimum
+def should_abstain(evidence: list[Evidence]) -> bool:
+    return not evidence

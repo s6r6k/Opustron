@@ -1,4 +1,99 @@
+# Chronicle lockdown policy for a NemoClaw Hermes sandbox.
+#
+# Complete OpenShell policy: network is deny-by-default and only three
+# destinations are reachable. Apply to a running sandbox with
+#
+#   openshell policy set --policy deploy/openshell-policy.yaml --wait <sandbox>
+#
+# `policy set` REPLACES the live policy (no merge), which is the point: the
+# baseline's PyPI, NVIDIA and Nous Research grants disappear. Install Chronicle
+# and the Hermes plugin before applying it (deploy/install.sh does this).
+#
+# Filesystem and process sections mirror NemoClaw's Hermes baseline
+# (agents/hermes/policy-additions.yaml, Apache-2.0) so Hermes itself still runs.
+# They are startup-time fields; network_policies are applied live.
+#
+# If a request is denied that should not be, find the calling binary with
+#   openshell logs <sandbox> --source sandbox
+
 version: 1
-policy:
-  network: deny-by-default
-  filesystem: read-only
+
+filesystem_policy:
+  include_workdir: true
+  read_only:
+    - /usr
+    - /lib
+    - /opt/hermes
+    - /proc
+    - /dev/urandom
+    - /app
+    - /run/nemoclaw/managed-gateway-expected-exit
+    - /etc
+    - /var/log
+    - /var/lib/dpkg
+  read_write:
+    - /sandbox            # $HOME: holds ~/.chronicle (egress log, LLM cache, store)
+    - /sandbox/.hermes    # Hermes config, history and the Chronicle plugin
+    - /tmp
+    - /dev/null
+    - /dev/pts            # PTYs for the Hermes TUI and dashboard chat
+
+landlock:
+  compatibility: best_effort
+
+process:
+  run_as_user: sandbox
+  run_as_group: sandbox
+
+network_policies:
+  # Hermes's own model calls. inference.local is the OpenShell gateway route;
+  # point it at Nebius Token Factory during `nemoclaw onboard`.
+  managed_inference:
+    name: managed_inference
+    endpoints:
+      - host: inference.local
+        port: 443
+        protocol: rest
+        enforcement: enforce
+        rules:
+          - allow: { method: POST, path: "/v1/chat/completions" }
+          - allow: { method: POST, path: "/v1/embeddings" }
+          - allow: { method: GET, path: "/v1/models" }
+          - allow: { method: GET, path: "/v1/models/**" }
+    binaries:
+      - { path: /usr/local/bin/hermes }
+      - { path: /usr/bin/python3* }
+      - { path: /opt/hermes/.venv/bin/python }
+
+  # Chronicle's own LLM calls (chronicle.guard.llm), always pseudonymised first.
+  chronicle_token_factory:
+    name: chronicle_token_factory
+    endpoints:
+      - host: api.tokenfactory.nebius.com
+        port: 443
+        protocol: rest
+        enforcement: enforce
+        rules:
+          - allow: { method: POST, path: "/v1/chat/completions" }
+          - allow: { method: POST, path: "/v1/embeddings" }
+          - allow: { method: GET, path: "/v1/models" }
+    binaries:
+      - { path: /usr/local/bin/hermes }
+      - { path: /usr/bin/python3* }
+      - { path: /opt/hermes/.venv/bin/python }
+
+  # Web enrichment (chronicle.integrations.tavily).
+  chronicle_tavily:
+    name: chronicle_tavily
+    endpoints:
+      - host: api.tavily.com
+        port: 443
+        protocol: rest
+        enforcement: enforce
+        rules:
+          - allow: { method: POST, path: "/search" }
+          - allow: { method: POST, path: "/extract" }
+    binaries:
+      - { path: /usr/local/bin/hermes }
+      - { path: /usr/bin/python3* }
+      - { path: /opt/hermes/.venv/bin/python }

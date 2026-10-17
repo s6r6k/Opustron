@@ -1,0 +1,8 @@
+name: chronicle
+version: 0.1.0
+description: "Chronicle — bi-temporal personal memory. Recalls what was true on any date; PII is pseudonymised before it leaves the machine."
+hooks:
+  - prefetch
+  - sync_turn
+  - on_memory_write
+  - shutdown

@@ -1,5 +1,8 @@
 {
   "name": "chronicle",
-  "version": "0.1.0",
-  "description": "Chronicle temporal memory benchmark adapter"
+  "description": "Chronicle P3 baseline: shared P1 claim ingestion, claim retrieval and privacy-routed answers. P2 temporal-store integration pending.",
+  "model": "SET_TO_ACTUAL_MODEL_ID",
+  "accounting": "proxy",
+  "ingest": ["python", "-m", "chronicle.ingest", "--corpus", "{corpus}", "--state", "{state}"],
+  "answer": ["python", "adapters/chronicle/answer.py", "--state", "{state}"]
 }
